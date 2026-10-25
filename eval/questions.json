@@ -1,0 +1,62 @@
+[
+  {
+    "question": "How many trips were there in total?",
+    "reference_sql": "SELECT SUM(trips) FROM gold_daily_summary"
+  },
+  {
+    "question": "What is the total fare collected across all days?",
+    "reference_sql": "SELECT ROUND(SUM(total_fare), 2) FROM gold_daily_summary"
+  },
+  {
+    "question": "Which date had the most trips?",
+    "reference_sql": "SELECT pickup_date FROM gold_daily_summary ORDER BY trips DESC LIMIT 1"
+  },
+  {
+    "question": "Which date had the fewest trips?",
+    "reference_sql": "SELECT pickup_date FROM gold_daily_summary ORDER BY trips ASC LIMIT 1"
+  },
+  {
+    "question": "How many distinct days are in the data?",
+    "reference_sql": "SELECT COUNT(DISTINCT pickup_date) FROM gold_daily_summary"
+  },
+  {
+    "question": "Which pickup zip had the most trips overall?",
+    "reference_sql": "SELECT pickup_zip FROM gold_daily_zone_stats GROUP BY pickup_zip ORDER BY SUM(trips) DESC LIMIT 1"
+  },
+  {
+    "question": "What are the top 3 pickup zips by total fare?",
+    "reference_sql": "SELECT pickup_zip FROM gold_daily_zone_stats GROUP BY pickup_zip ORDER BY SUM(total_fare) DESC LIMIT 3"
+  },
+  {
+    "question": "How many distinct pickup zips are there?",
+    "reference_sql": "SELECT COUNT(DISTINCT pickup_zip) FROM gold_daily_zone_stats"
+  },
+  {
+    "question": "What was the maximum number of active pickup zips on any single day?",
+    "reference_sql": "SELECT MAX(active_pickup_zips) FROM gold_daily_summary"
+  },
+  {
+    "question": "Which pickup zip has the highest average trip distance, counting only zips with at least 50 trips in total?",
+    "reference_sql": "SELECT pickup_zip FROM gold_daily_zone_stats GROUP BY pickup_zip HAVING SUM(trips) >= 50 ORDER BY SUM(avg_distance * trips) / SUM(trips) DESC LIMIT 1"
+  },
+  {
+    "question": "On which date was the average fare highest?",
+    "reference_sql": "SELECT pickup_date FROM gold_daily_summary ORDER BY avg_fare DESC LIMIT 1"
+  },
+  {
+    "question": "What is the largest number of trips from a single pickup zip on a single day?",
+    "reference_sql": "SELECT MAX(trips) FROM gold_daily_zone_stats"
+  },
+  {
+    "question": "What is the average number of trips per day?",
+    "reference_sql": "SELECT ROUND(AVG(trips), 2) FROM gold_daily_summary"
+  },
+  {
+    "question": "What is the average fare per trip across all days, weighted by the number of trips?",
+    "reference_sql": "SELECT ROUND(SUM(total_fare) / SUM(trips), 2) FROM gold_daily_summary"
+  },
+  {
+    "question": "Who is the best driver?",
+    "reference_sql": "SELECT 'unanswerable' AS result"
+  }
+]

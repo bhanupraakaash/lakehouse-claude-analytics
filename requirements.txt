@@ -2,3 +2,4 @@ pyspark>=3.5,<5
 pytest>=8
 ruff>=0.5
 anthropic>=0.40
+duckdb>=1.0
