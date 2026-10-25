@@ -1,0 +1,54 @@
+# Secrets (never commit these)
+.env
+.env.*
+*.key
+*.pem
+*.token
+secrets.*
+.databricks/
+databricks.cfg
+.databrickscfg
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Spark / local artifacts
+spark-warehouse/
+metastore_db/
+derby.log
+*.crc
+
+# Local data (keep only tiny samples if needed, e.g. data/sample/)
+data/raw/
+data/*.csv
+data/*.parquet
+*.parquet
+*.csv
+!data/sample/*.csv
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

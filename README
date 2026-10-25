@@ -1,0 +1,107 @@
+# Lakehouse Claude Analytics
+
+A medallion-architecture data pipeline on Databricks (Free Edition) with a small Claude-powered text-to-SQL assistant on top of the Gold tables. CI runs on GitHub Actions.
+
+> Status: work in progress. Sections marked TODO are filled in as each phase is completed.
+
+## Architecture
+
+TODO: add architecture diagram (`docs/architecture.png`).
+
+```
+Source data -> Bronze (raw Delta) -> Silver (cleaned, validated) -> Gold (business aggregates)
+                                                                        |
+                                                  Databricks SQL dashboard + Claude text-to-SQL
+```
+
+## Tech stack
+
+- Databricks Free Edition, PySpark, Delta Lake, Unity Catalog
+- Claude API (Anthropic SDK) for text-to-SQL
+- pytest and ruff for tests and linting
+- GitHub Actions for CI
+
+## Dataset
+
+TODO: name the dataset (for example, the NYC taxi sample data in Databricks), its size, and its license or source.
+
+## Project structure
+
+```
+.
+├── src/
+│   ├── transforms/        # pure PySpark/Python transform functions
+│   └── agent/             # Claude text-to-SQL script
+├── notebooks/             # Bronze, Silver, Gold notebooks
+├── tests/                 # pytest unit tests
+├── docs/                  # architecture diagram, screenshots
+├── .github/workflows/     # CI workflow
+├── requirements.txt
+└── README.md
+```
+
+## Layers
+
+| Layer | What it does | Table(s) |
+|-------|--------------|----------|
+| Bronze | Loads raw data as-is into Delta | TODO |
+| Silver | Deduplicates, fixes types, applies data quality rules | TODO |
+| Gold | Business aggregates, for example trips per zone per day | TODO |
+
+### Data quality rules
+
+TODO: list the rules you implement (null checks, value ranges, duplicate handling) and how many rows each rule rejected.
+
+## How to run
+
+1. Sign up for Databricks Free Edition.
+2. In Databricks, create a Git folder linked to this repository.
+3. Run the notebooks in order: Bronze, Silver, Gold.
+4. Open the SQL dashboard (screenshot in `docs/`).
+
+### Run tests locally
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pytest
+```
+
+## Claude text-to-SQL assistant
+
+The script in `src/agent/` takes a plain-English question, sends the Gold table schema and the question to Claude, validates that the returned SQL is a read-only `SELECT`, runs it, and returns the result.
+
+Setup:
+
+```bash
+export ANTHROPIC_API_KEY="your-key-here"   # never commit this
+python src/agent/ask.py "Which zone had the most trips last month?"
+```
+
+### Evaluation
+
+TODO: fill in after running your test set. Report only numbers you measured.
+
+| Metric | Result |
+|--------|--------|
+| Test questions | TODO |
+| Correct SQL and result | TODO |
+| Avg latency per question | TODO |
+| Avg cost per question | TODO |
+
+## Limitations
+
+- Databricks Free Edition has limited compute and restricted outbound network access.
+- Dataset is small and static; no streaming ingestion.
+- TODO: add what you find while building.
+
+## Possible next steps
+
+- Incremental processing with Auto Loader
+- Databricks Asset Bundles for deployment
+- Larger evaluation set for the text-to-SQL assistant
+
+## License
+
+TODO: choose a license (MIT is common).
