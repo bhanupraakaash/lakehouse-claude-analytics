@@ -4,7 +4,7 @@
 
 A medallion-architecture data pipeline on Databricks Free Edition, with a Claude-powered text-to-SQL assistant on top of the Gold tables. Transform logic is unit tested, and linting and tests run on GitHub Actions for every push.
 
-> Status: pipeline, tests, CI, dashboard and agent are built. Items marked TODO are measured values to fill in from your own runs.
+> Status: pipeline, tests, CI, dashboard, text-to-SQL assistant and evaluation are built. Items marked TODO are measured values still to be filled in from Databricks runs.
 
 ## Architecture
 
@@ -39,8 +39,9 @@ samples.nyctaxi.trips
 
 Databricks built-in sample data: `samples.nyctaxi.trips` (NYC taxi trips).
 
-- Rows: TODO
+- Rows: 21,932 (the Bronze row count, a straight copy of the source)
 - Columns used: `tpep_pickup_datetime`, `tpep_dropoff_datetime`, `pickup_zip`, `dropoff_zip`, `trip_distance`, `fare_amount`
+- Gold tables as exported for the assistant: `gold_daily_summary` has 60 rows (60 days) and `gold_daily_zone_stats` has 3,271 rows (one per pickup zip per day)
 - Source: Databricks sample datasets. Check the Databricks documentation for the dataset's terms before redistributing any data.
 
 ## Project structure
@@ -61,8 +62,11 @@ Databricks built-in sample data: `samples.nyctaxi.trips` (NYC taxi trips).
 │   └── 03_gold.py
 ├── tests/                     # pytest unit tests
 ├── eval/
-│   ├── questions.json         # 15 evaluation questions with reference SQL
-│   └── results.json           # output of the last evaluation run
+│   ├── questions.json            # 15 evaluation questions with reference SQL
+│   ├── questions_heldout.json    # 9 held-out questions, written before the prompt fix
+│   ├── results_baseline.json     # run 1 on questions.json (before the prompt fix)
+│   ├── results.json              # run 2 on questions.json (after the prompt fix)
+│   └── results_heldout.json      # run on the held-out set (after the prompt fix)
 ├── data/sample/               # exported Gold tables (CSV) for local runs
 ├── docs/                      # architecture diagram, dashboard screenshot
 ├── .github/workflows/ci.yml   # lint and tests on every push
@@ -93,20 +97,22 @@ Rows that fail a rule are written to `quarantine_trips` with the first failing r
 
 | Rule | Rejects when | Rows rejected |
 |------|--------------|---------------|
-| `null_pickup_time` | pickup time is null | TODO |
-| `null_dropoff_time` | dropoff time is null | TODO |
-| `dropoff_not_after_pickup` | dropoff is not after pickup | TODO |
-| `non_positive_distance` | distance is null or <= 0 | TODO |
-| `distance_too_large` | distance > 200 miles | TODO |
-| `non_positive_fare` | fare is null or <= 0 | TODO |
-| `fare_too_large` | fare > $1000 | TODO |
-| `duration_too_long` | duration > 360 minutes | TODO |
+| `null_pickup_time` | pickup time is null | 0 |
+| `null_dropoff_time` | dropoff time is null | 0 |
+| `dropoff_not_after_pickup` | dropoff is not after pickup | 1 |
+| `non_positive_distance` | distance is null or <= 0 | 75 |
+| `distance_too_large` | distance > 200 miles | 0 |
+| `non_positive_fare` | fare is null or <= 0 | 9 |
+| `fare_too_large` | fare > $1000 | 0 |
+| `duration_too_long` | duration > 360 minutes | 32 |
 
-Row counts from the last run: Bronze TODO, Silver TODO, Quarantine TODO, removed as duplicates TODO.
+Each rejected row is counted once, under the first rule it fails, in the order listed above. Rows rejected in total: 117.
 
-Reconciliation: the sum of daily trips in `gold_daily_summary` equals the row count of `silver_trips` (TODO: confirm and record the result of the check in `03_gold.py`).
+Row counts from the last run: Bronze 21,932, Silver 21,815, Quarantine 117 (0.53% of rows), removed as duplicates 0. Silver plus Quarantine equals Bronze.
 
-The thresholds are judgment calls. TODO: note how you checked them against the data and whether you changed them.
+Reconciliation: the sum of daily trips in `gold_daily_summary` (21,815) equals the row count of `silver_trips` (21,815); the check in `03_gold.py` prints `Match: True`.
+
+The thresholds are judgment calls. On this dataset the upper limits for distance (200 miles) and fare ($1000) rejected no rows, so they were not binding. The 360-minute duration limit rejected 32 rows, and zero-distance trips account for most rejections (75 of 117).
 
 ## Dashboard
 
@@ -169,30 +175,39 @@ The SQL guard blocks multiple statements, write and DDL keywords, and any table 
 
 ### Evaluation
 
-`eval/questions.json` holds 15 questions, each with a hand-written reference query. For each question the evaluator runs Claude's SQL and the reference SQL on the same data and compares the result sets (order-insensitive, numbers rounded to 2 decimals). One question is deliberately unanswerable, to check that the assistant declines properly.
+Two question sets live in `eval/`:
+
+- `questions.json`: 15 questions, each with a hand-written reference query.
+- `questions_heldout.json`: 9 further questions, written before the prompt was changed.
+
+For each question the evaluator runs Claude's SQL and the reference SQL on the same data and compares the full result sets (order-insensitive, numbers rounded to 2 decimals). An extra column therefore counts as a miss. Each set includes a deliberately unanswerable question, to check that the assistant declines properly.
 
 ```
 python -m src.agent.evaluate
+python -m src.agent.evaluate --questions eval/questions_heldout.json --out eval/results_heldout.json
 ```
 
-Results of the last run (model: TODO, date: TODO):
+Results (25 Oct 2026, model: `claude-sonnet-5-5`):
 
-| Metric | Result |
-|--------|--------|
-| Test questions | 15 |
-| Correct (result matches reference) | TODO |
-| Execution accuracy | TODO % |
-| Queries that errored or were blocked | TODO |
-| Avg latency per question | TODO s |
-| Total input / output tokens | TODO / TODO |
+| Run | Questions | Correct | Accuracy | Errors | Avg latency | Input / output tokens |
+|-----|-----------|---------|----------|--------|-------------|-----------------------|
+| Baseline, `questions.json` | 15 | 9 | 60.0% | 0 | 1.25 s | 5,714 / 826 |
+| After prompt change, `questions.json` | 15 | 15 | 100.0% | 0 | 1.24 s | 6,929 / 868 |
+| After prompt change, held-out | 9 | 9 | 100.0% | 0 | 1.22 s | 4,203 / 437 |
 
-TODO: describe the failing questions, why they failed, and what you changed in the prompt if you reran the evaluation. Report only numbers you measured.
+What happened:
+
+- The baseline's six failures all had the same cause. Claude's SQL was logically correct but returned extra columns (for example `pickup_date, trips` where only `pickup_date` was asked for), which the strict comparison counts as wrong.
+- The fix was one rule added to the system prompt in `src/agent/ask.py`: return only the columns needed to answer the question, unless extra columns are requested. The scoring was not loosened.
+- The prompt was changed after seeing the baseline failures, so the 100% on `questions.json` is not independent evidence. The held-out set is the fairer number. It includes a question that needs two columns, to check the rule does not over-trim.
+- Each set was run once. TODO: rerun a few times to check stability and note any variation.
+- Cost: TODO, compute from the token counts above and the current per-token prices for the model.
 
 ## Limitations
 
 - Databricks Free Edition has limited compute and restricted outbound network access. TODO: record whether the Claude API was reachable from Databricks. The assistant here runs locally on exported CSVs.
 - The dataset is small and static; there is no streaming ingestion.
-- The evaluation set is small (15 questions) and was written by the project author, so accuracy numbers are indicative, not a benchmark.
+- The evaluation sets are small (15 and 9 questions), were written by the project author, and consist mostly of direct single-aggregate questions, so accuracy numbers are indicative, not a benchmark. Results are from single runs.
 - Data quality thresholds are heuristics chosen for this dataset.
 - TODO: add anything else you found while building.
 
@@ -200,7 +215,7 @@ TODO: describe the failing questions, why they failed, and what you changed in t
 
 - Incremental processing with Auto Loader
 - Databricks Asset Bundles for deployment
-- A larger and more varied evaluation set, and a comparison of prompt variants
+- A larger and harder evaluation set (ambiguous wording, joins across the two tables), repeated runs, and a comparison of prompt variants
 - Running the assistant inside Databricks if the API is reachable
 
 ## License

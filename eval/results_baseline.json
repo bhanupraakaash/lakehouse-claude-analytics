@@ -1,0 +1,335 @@
+{
+  "summary": {
+    "questions": 15,
+    "correct": 9,
+    "accuracy_pct": 60.0,
+    "errors": 0,
+    "avg_latency_s": 1.25,
+    "total_input_tokens": 5714,
+    "total_output_tokens": 826
+  },
+  "results": [
+    {
+      "question": "How many trips were there in total?",
+      "sql": "SELECT SUM(trips) AS total_trips FROM gold_daily_summary",
+      "columns": [
+        "total_trips"
+      ],
+      "rows": [
+        [
+          21815
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 375,
+        "output_tokens": 30
+      },
+      "latency_s": 1.08,
+      "correct": true,
+      "reference_sql": "SELECT SUM(trips) FROM gold_daily_summary"
+    },
+    {
+      "question": "What is the total fare collected across all days?",
+      "sql": "SELECT SUM(total_fare) AS total_fare FROM gold_daily_summary",
+      "columns": [
+        "total_fare"
+      ],
+      "rows": [
+        [
+          268508.53
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 378,
+        "output_tokens": 32
+      },
+      "latency_s": 1.02,
+      "correct": true,
+      "reference_sql": "SELECT ROUND(SUM(total_fare), 2) FROM gold_daily_summary"
+    },
+    {
+      "question": "Which date had the most trips?",
+      "sql": "SELECT pickup_date, trips FROM gold_daily_summary ORDER BY trips DESC LIMIT 1",
+      "columns": [
+        "pickup_date",
+        "trips"
+      ],
+      "rows": [
+        [
+          "2016-02-11",
+          455
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 375,
+        "output_tokens": 43
+      },
+      "latency_s": 1.09,
+      "correct": false,
+      "reference_sql": "SELECT pickup_date FROM gold_daily_summary ORDER BY trips DESC LIMIT 1"
+    },
+    {
+      "question": "Which date had the fewest trips?",
+      "sql": "SELECT pickup_date, trips FROM gold_daily_summary ORDER BY trips ASC LIMIT 1",
+      "columns": [
+        "pickup_date",
+        "trips"
+      ],
+      "rows": [
+        [
+          "2016-01-23",
+          78
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 377,
+        "output_tokens": 43
+      },
+      "latency_s": 1.31,
+      "correct": false,
+      "reference_sql": "SELECT pickup_date FROM gold_daily_summary ORDER BY trips ASC LIMIT 1"
+    },
+    {
+      "question": "How many distinct days are in the data?",
+      "sql": "SELECT COUNT(DISTINCT pickup_date) AS distinct_days FROM gold_daily_summary",
+      "columns": [
+        "distinct_days"
+      ],
+      "rows": [
+        [
+          60
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 377,
+        "output_tokens": 41
+      },
+      "latency_s": 1.1,
+      "correct": true,
+      "reference_sql": "SELECT COUNT(DISTINCT pickup_date) FROM gold_daily_summary"
+    },
+    {
+      "question": "Which pickup zip had the most trips overall?",
+      "sql": "SELECT pickup_zip, SUM(trips) AS total_trips FROM gold_daily_zone_stats GROUP BY pickup_zip ORDER BY total_trips DESC LIMIT 1",
+      "columns": [
+        "pickup_zip",
+        "total_trips"
+      ],
+      "rows": [
+        [
+          10001,
+          1225
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 381,
+        "output_tokens": 72
+      },
+      "latency_s": 1.34,
+      "correct": false,
+      "reference_sql": "SELECT pickup_zip FROM gold_daily_zone_stats GROUP BY pickup_zip ORDER BY SUM(trips) DESC LIMIT 1"
+    },
+    {
+      "question": "What are the top 3 pickup zips by total fare?",
+      "sql": "SELECT pickup_zip, SUM(total_fare) AS total_fare\nFROM gold_daily_zone_stats\nGROUP BY pickup_zip\nORDER BY total_fare DESC\nLIMIT 3",
+      "columns": [
+        "pickup_zip",
+        "total_fare"
+      ],
+      "rows": [
+        [
+          11422,
+          18953.5
+        ],
+        [
+          11371,
+          14690.0
+        ],
+        [
+          10001,
+          13010.01
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 383,
+        "output_tokens": 78
+      },
+      "latency_s": 1.38,
+      "correct": false,
+      "reference_sql": "SELECT pickup_zip FROM gold_daily_zone_stats GROUP BY pickup_zip ORDER BY SUM(total_fare) DESC LIMIT 3"
+    },
+    {
+      "question": "How many distinct pickup zips are there?",
+      "sql": "SELECT COUNT(DISTINCT pickup_zip) AS distinct_pickup_zips FROM gold_daily_zone_stats",
+      "columns": [
+        "distinct_pickup_zips"
+      ],
+      "rows": [
+        [
+          120
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 379,
+        "output_tokens": 50
+      },
+      "latency_s": 1.22,
+      "correct": true,
+      "reference_sql": "SELECT COUNT(DISTINCT pickup_zip) FROM gold_daily_zone_stats"
+    },
+    {
+      "question": "What was the maximum number of active pickup zips on any single day?",
+      "sql": "SELECT MAX(active_pickup_zips) AS max_active_pickup_zips FROM gold_daily_summary",
+      "columns": [
+        "max_active_pickup_zips"
+      ],
+      "rows": [
+        [
+          64
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 385,
+        "output_tokens": 42
+      },
+      "latency_s": 1.26,
+      "correct": true,
+      "reference_sql": "SELECT MAX(active_pickup_zips) FROM gold_daily_summary"
+    },
+    {
+      "question": "Which pickup zip has the highest average trip distance, counting only zips with at least 50 trips in total?",
+      "sql": "SELECT pickup_zip,\n       SUM(avg_distance * trips) / SUM(trips) AS avg_trip_distance,\n       SUM(trips) AS total_trips\nFROM gold_daily_zone_stats\nGROUP BY pickup_zip\nHAVING SUM(trips) >= 50\nORDER BY avg_trip_distance DESC\nLIMIT 1",
+      "columns": [
+        "pickup_zip",
+        "avg_trip_distance",
+        "total_trips"
+      ],
+      "rows": [
+        [
+          11422,
+          15.796062052505972,
+          419
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 399,
+        "output_tokens": 210
+      },
+      "latency_s": 2.32,
+      "correct": false,
+      "reference_sql": "SELECT pickup_zip FROM gold_daily_zone_stats GROUP BY pickup_zip HAVING SUM(trips) >= 50 ORDER BY SUM(avg_distance * trips) / SUM(trips) DESC LIMIT 1"
+    },
+    {
+      "question": "On which date was the average fare highest?",
+      "sql": "SELECT pickup_date, avg_fare FROM gold_daily_summary ORDER BY avg_fare DESC LIMIT 1",
+      "columns": [
+        "pickup_date",
+        "avg_fare"
+      ],
+      "rows": [
+        [
+          "2016-01-25",
+          14.45
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 377,
+        "output_tokens": 49
+      },
+      "latency_s": 1.35,
+      "correct": false,
+      "reference_sql": "SELECT pickup_date FROM gold_daily_summary ORDER BY avg_fare DESC LIMIT 1"
+    },
+    {
+      "question": "What is the largest number of trips from a single pickup zip on a single day?",
+      "sql": "SELECT MAX(trips) AS max_trips FROM gold_daily_zone_stats",
+      "columns": [
+        "max_trips"
+      ],
+      "rows": [
+        [
+          34
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 388,
+        "output_tokens": 33
+      },
+      "latency_s": 1.14,
+      "correct": true,
+      "reference_sql": "SELECT MAX(trips) FROM gold_daily_zone_stats"
+    },
+    {
+      "question": "What is the average number of trips per day?",
+      "sql": "SELECT AVG(trips) AS avg_trips_per_day FROM gold_daily_summary",
+      "columns": [
+        "avg_trips_per_day"
+      ],
+      "rows": [
+        [
+          363.5833333333333
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 377,
+        "output_tokens": 35
+      },
+      "latency_s": 1.19,
+      "correct": true,
+      "reference_sql": "SELECT ROUND(AVG(trips), 2) FROM gold_daily_summary"
+    },
+    {
+      "question": "What is the average fare per trip across all days, weighted by the number of trips?",
+      "sql": "SELECT SUM(total_fare) * 1.0 / SUM(trips) AS weighted_avg_fare FROM gold_daily_summary",
+      "columns": [
+        "weighted_avg_fare"
+      ],
+      "rows": [
+        [
+          12.308435938574377
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 389,
+        "output_tokens": 51
+      },
+      "latency_s": 1.01,
+      "correct": true,
+      "reference_sql": "SELECT ROUND(SUM(total_fare) / SUM(trips), 2) FROM gold_daily_summary"
+    },
+    {
+      "question": "Who is the best driver?",
+      "sql": "SELECT 'unanswerable' AS result",
+      "columns": [
+        "result"
+      ],
+      "rows": [
+        [
+          "unanswerable"
+        ]
+      ],
+      "error": null,
+      "usage": {
+        "input_tokens": 374,
+        "output_tokens": 17
+      },
+      "latency_s": 0.93,
+      "correct": true,
+      "reference_sql": "SELECT 'unanswerable' AS result"
+    }
+  ]
+}

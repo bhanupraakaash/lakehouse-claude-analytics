@@ -1,0 +1,20 @@
+[
+  {"question": "How many trips were there on the day with the highest total fare?",
+   "reference_sql": "SELECT trips FROM gold_daily_summary ORDER BY total_fare DESC LIMIT 1"},
+  {"question": "Which pickup zip has the lowest average fare per trip, counting only zips with at least 20 trips in total?",
+   "reference_sql": "SELECT pickup_zip FROM gold_daily_zone_stats GROUP BY pickup_zip HAVING SUM(trips) >= 20 ORDER BY SUM(total_fare) / SUM(trips) ASC LIMIT 1"},
+  {"question": "On how many days were there more trips than the average daily trip count?",
+   "reference_sql": "SELECT COUNT(*) FROM gold_daily_summary WHERE trips > (SELECT AVG(trips) FROM gold_daily_summary)"},
+  {"question": "What is the total fare for pickup zip 10001?",
+   "reference_sql": "SELECT ROUND(SUM(total_fare), 2) FROM gold_daily_zone_stats WHERE pickup_zip = 10001"},
+  {"question": "How many zip-and-day combinations had at least 10 trips?",
+   "reference_sql": "SELECT COUNT(*) FROM gold_daily_zone_stats WHERE trips >= 10"},
+  {"question": "What is the longest average trip duration in minutes recorded for any zip on any day?",
+   "reference_sql": "SELECT MAX(avg_duration_min) FROM gold_daily_zone_stats"},
+  {"question": "What are the earliest and latest dates in the data?",
+   "reference_sql": "SELECT MIN(pickup_date), MAX(pickup_date) FROM gold_daily_summary"},
+  {"question": "Show the date and number of trips for the first 3 dates in the data.",
+   "reference_sql": "SELECT pickup_date, trips FROM gold_daily_summary ORDER BY pickup_date ASC LIMIT 3"},
+  {"question": "What was the weather like on the busiest day?",
+   "reference_sql": "SELECT 'unanswerable' AS result"}
+]

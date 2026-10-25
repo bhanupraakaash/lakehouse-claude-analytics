@@ -13,6 +13,13 @@ import time
 
 from src.agent.sql_guard import validate_sql
 
+try:
+    from dotenv import load_dotenv as _load_dotenv
+
+    _load_dotenv()  # so ANTHROPIC_MODEL in .env is honoured at import time
+except ImportError:
+    pass
+
 DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5-5")
 MAX_ROWS = 100
 
@@ -31,6 +38,9 @@ gold_daily_summary  -- one row per pickup_date (all zips combined)
 Rules:
 - Output exactly one SELECT statement and nothing else. No explanation, no markdown.
 - Use only the tables and columns above. Never modify data.
+- Return only the columns needed to answer the question. For a 'which X' question return just X,
+  and for a 'how many' or 'what is the total' question return just that number.
+  Include extra columns only when the question asks for them (for example 'show the trips for ...').
 - Fares are in US dollars, distances in miles, durations in minutes.
 - If the question cannot be answered from these tables, output: SELECT 'unanswerable' AS result
 - Use standard SQL that works in both Spark SQL and DuckDB.
@@ -114,6 +124,9 @@ def main():
     args = parser.parse_args()
 
     import anthropic
+    from dotenv import load_dotenv
+
+    load_dotenv()  # reads ANTHROPIC_API_KEY from a local .env file if present
 
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from the environment
     out = answer(client, DuckDBBackend(args.data_dir), args.question, args.model)

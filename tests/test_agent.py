@@ -7,6 +7,7 @@ from src.agent.evaluate import normalize, run_eval, summarize
 
 HERE = os.path.dirname(__file__)
 QUESTIONS = os.path.join(HERE, "..", "eval", "questions.json")
+HELDOUT = os.path.join(HERE, "..", "eval", "questions_heldout.json")
 
 
 class FakeClient:
@@ -65,6 +66,23 @@ def test_reference_queries_all_run_and_pass_the_guard(tmp_path):
     assert len(questions) == 15
     for item in questions:
         backend.run(validate_sql(item["reference_sql"]))
+
+
+def test_heldout_reference_queries_run_and_pass_the_guard(tmp_path):
+    from src.agent.sql_guard import validate_sql
+
+    backend = write_data(tmp_path)
+    with open(HELDOUT) as f:
+        questions = json.load(f)
+    assert len(questions) == 9
+    for item in questions:
+        backend.run(validate_sql(item["reference_sql"]))
+
+
+def test_prompt_asks_for_only_needed_columns():
+    from src.agent.ask import SCHEMA_PROMPT
+
+    assert "only the columns needed" in SCHEMA_PROMPT
 
 
 def test_eval_scores_matching_and_mismatching_answers(tmp_path):
